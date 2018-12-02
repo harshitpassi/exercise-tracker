@@ -1,12 +1,14 @@
-const express = require('express')
-const app = express()
-const bodyParser = require('body-parser')
+'use strict';
 
-const cors = require('cors')
+var express = require('express');
+var app = express();
+var bodyParser = require('body-parser');
 
-const mongoose = require('mongoose')
+var cors = require('cors');
+
+var mongoose = require('mongoose');
 mongoose.connect('mongodb://admin:hhhthegame0207@ds123454.mlab.com:23454/fcc-challenge');
-let userSchema = new mongoose.Schema({
+var userSchema = new mongoose.Schema({
     username: { type: String, required: true },
     exercises: [{
         description: String,
@@ -14,24 +16,23 @@ let userSchema = new mongoose.Schema({
         date: Date
     }]
 });
-let userModel = mongoose.model('User', userSchema);
+var userModel = mongoose.model('User', userSchema);
 
-app.use(cors())
+app.use(cors());
 
-app.use(bodyParser.urlencoded({ extended: false }))
-app.use(bodyParser.json())
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
 
-
-app.use(express.static('public'))
-app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/views/index.html')
+app.use(express.static('public'));
+app.get('/', function (req, res) {
+    res.sendFile(__dirname + '/views/index.html');
 });
 
-app.post('/api/exercise/new-user', (req, res) => {
-    let newUser = new userModel({
+app.post('/api/exercise/new-user', function (req, res) {
+    var newUser = new userModel({
         username: req.body.username
     });
-    newUser.save((err, result) => {
+    newUser.save(function (err, result) {
         if (err) {
             throw new Error(err);
         }
@@ -42,8 +43,8 @@ app.post('/api/exercise/new-user', (req, res) => {
     });
 });
 
-app.get('/api/exercise/users', (req, res) => {
-    userModel.find({}).select('_id username').exec((err, result) => {
+app.get('/api/exercise/users', function (req, res) {
+    userModel.find({}).select('_id username').exec(function (err, result) {
         if (err) {
             throw new Error(err);
         }
@@ -51,7 +52,7 @@ app.get('/api/exercise/users', (req, res) => {
     });
 });
 
-app.post('/api/exercise/add', (req, res) => {
+app.post('/api/exercise/add', function (req, res) {
     userModel.findByIdAndUpdate(req.body.userId, {
         $addToSet: {
             exercises: {
@@ -60,7 +61,7 @@ app.post('/api/exercise/add', (req, res) => {
                 date: req.body.date || new Date()
             }
         }
-    }, { new: true }, (err, result) => {
+    }, { new: true }, function (err, result) {
         if (err) {
             throw new Error(err);
         }
@@ -68,11 +69,11 @@ app.post('/api/exercise/add', (req, res) => {
     });
 });
 
-app.get('/api/exercise/log', (req, res) => {
+app.get('/api/exercise/log', function (req, res) {
     if (!req.query.userId) {
         throw new Error('No user ID specified');
     }
-    let findQuery = userModel.findById(req.query.userId);
+    var findQuery = userModel.findById(req.query.userId);
     if (req.query.limit && !isNaN(req.query.limit)) {
         findQuery = findQuery.limit(req.query.limit);
     }
@@ -89,40 +90,38 @@ app.get('/api/exercise/log', (req, res) => {
         'exercises.$': 1
     });
 
-    findQuery.exec((err, data) => {
+    findQuery.exec(function (err, data) {
         if (err) {
             throw new Error(err);
         }
         res.json(data);
     });
-
 });
 
-
 // Not found middleware
-app.use((req, res, next) => {
-    return next({ status: 404, message: 'not found' })
-})
+app.use(function (req, res, next) {
+    return next({ status: 404, message: 'not found' });
+});
 
 // Error Handling middleware
-app.use((err, req, res, next) => {
-    let errCode, errMessage
+app.use(function (err, req, res, next) {
+    var errCode = void 0,
+        errMessage = void 0;
 
     if (err.errors) {
         // mongoose validation error
-        errCode = 400 // bad request
-        const keys = Object.keys(err.errors)
-            // report the first validation error
-        errMessage = err.errors[keys[0]].message
+        errCode = 400; // bad request
+        var keys = Object.keys(err.errors);
+        // report the first validation error
+        errMessage = err.errors[keys[0]].message;
     } else {
         // generic or custom error
-        errCode = err.status || 500
-        errMessage = err.message || 'Internal Server Error'
+        errCode = err.status || 500;
+        errMessage = err.message || 'Internal Server Error';
     }
-    res.status(errCode).type('txt')
-        .send(errMessage)
-})
+    res.status(errCode).type('txt').send(errMessage);
+});
 
-const listener = app.listen(process.env.PORT || 3000, () => {
-    console.log('Your app is listening on port ' + listener.address().port)
-})
+var listener = app.listen(process.env.PORT || 3000, function () {
+    console.log('Your app is listening on port ' + listener.address().port);
+});
